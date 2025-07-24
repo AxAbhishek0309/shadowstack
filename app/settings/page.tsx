@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { UserButton, useUser } from "@clerk/nextjs"
+import { useSession, signOut } from "next-auth/react"
 import {
   Settings,
   Github,
@@ -31,7 +31,8 @@ import {
 import Link from "next/link"
 
 export default function SettingsPage() {
-  const { user } = useUser()
+  const { data: session } = useSession()
+  const user = session?.user
   const [notifications, setNotifications] = useState({
     deadCode: true,
     pullRequests: true,
@@ -64,7 +65,13 @@ export default function SettingsPage() {
               <span className="text-lg font-bold">Settings</span>
             </div>
           </div>
-          <UserButton afterSignOutUrl="/" />
+          <Button
+            onClick={() => signOut()}
+            variant="outline"
+            className="border-orange-500/50 text-orange-400"
+          >
+            Sign Out
+          </Button>
         </div>
       </header>
 
@@ -114,15 +121,14 @@ export default function SettingsPage() {
 
               <div className="flex items-center space-x-6 mb-6">
                 <Avatar className="w-20 h-20 border-2 border-orange-500/30">
-                  <AvatarImage src={user?.imageUrl || "/placeholder.svg"} alt="Profile" />
+                  <AvatarImage src={user?.image || "/placeholder.svg"} alt="Profile" />
                   <AvatarFallback className="bg-orange-500 text-white text-xl">
-                    {user?.firstName?.[0]}
-                    {user?.lastName?.[0]}
+                    {user?.name?.[0] || "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h4 className="text-lg font-medium text-white">{user?.fullName}</h4>
-                  <p className="text-gray-400">{user?.primaryEmailAddress?.emailAddress}</p>
+                  <h4 className="text-lg font-medium text-white">{user?.name}</h4>
+                  <p className="text-gray-400">{user?.email}</p>
                   <Badge className="mt-2 bg-green-500/20 text-green-400 border-green-500/30">Pro Plan</Badge>
                 </div>
               </div>
@@ -134,7 +140,7 @@ export default function SettingsPage() {
                   </Label>
                   <Input
                     id="firstName"
-                    defaultValue={user?.firstName || ""}
+                    defaultValue={user?.name?.split(' ')[0] || ""}
                     className="bg-gray-800/50 border-gray-700 text-white"
                   />
                 </div>
@@ -144,7 +150,7 @@ export default function SettingsPage() {
                   </Label>
                   <Input
                     id="lastName"
-                    defaultValue={user?.lastName || ""}
+                    defaultValue={user?.name?.split(' ').slice(1).join(' ') || ""}
                     className="bg-gray-800/50 border-gray-700 text-white"
                   />
                 </div>
@@ -187,7 +193,7 @@ export default function SettingsPage() {
                     <Github className="w-8 h-8 text-white" />
                     <div>
                       <p className="font-medium text-white">GitHub Account</p>
-                      <p className="text-sm text-gray-400">Connected as @{user?.username}</p>
+                      <p className="text-sm text-gray-400">Connected as @{user?.name}</p>
                     </div>
                   </div>
                   <Button

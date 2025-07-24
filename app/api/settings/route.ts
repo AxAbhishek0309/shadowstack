@@ -1,33 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
-import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/auth'
 
 export async function GET() {
   try {
-    const { userId } = await auth()
+    const session = await getServerSession(authOptions)
     
-    if (!userId) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      include: { settings: true }
-    })
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    // Mock settings data
+    const mockSettings = {
+      id: 'mock-settings-id',
+      userId: session.user.id,
+      deadCodeAlerts: true,
+      weeklyReports: true,
+      securityAlerts: true,
+      prUpdates: false,
+      autoCleanup: false,
+      riskThreshold: 'medium',
+      excludePatterns: null,
+      scanFrequency: 'daily',
+      createdAt: new Date(),
+      updatedAt: new Date()
     }
 
-    // Create default settings if they don't exist
-    if (!user.settings) {
-      const settings = await prisma.userSettings.create({
-        data: { userId: user.id }
-      })
-      return NextResponse.json(settings)
-    }
-
-    return NextResponse.json(user.settings)
+    return NextResponse.json(mockSettings)
   } catch (error) {
     console.error('Error fetching settings:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -36,18 +35,10 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   try {
-    const { userId } = await auth()
+    const session = await getServerSession(authOptions)
     
-    if (!userId) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId }
-    })
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     const body = await request.json()
@@ -62,32 +53,23 @@ export async function PUT(request: NextRequest) {
       scanFrequency
     } = body
 
-    const settings = await prisma.userSettings.upsert({
-      where: { userId: user.id },
-      update: {
-        deadCodeAlerts,
-        weeklyReports,
-        securityAlerts,
-        prUpdates,
-        autoCleanup,
-        riskThreshold,
-        excludePatterns,
-        scanFrequency
-      },
-      create: {
-        userId: user.id,
-        deadCodeAlerts,
-        weeklyReports,
-        securityAlerts,
-        prUpdates,
-        autoCleanup,
-        riskThreshold,
-        excludePatterns,
-        scanFrequency
-      }
-    })
+    // Mock updated settings (no database persistence)
+    const mockSettings = {
+      id: 'mock-settings-id',
+      userId: session.user.id,
+      deadCodeAlerts: deadCodeAlerts ?? true,
+      weeklyReports: weeklyReports ?? true,
+      securityAlerts: securityAlerts ?? true,
+      prUpdates: prUpdates ?? false,
+      autoCleanup: autoCleanup ?? false,
+      riskThreshold: riskThreshold ?? 'medium',
+      excludePatterns: excludePatterns ?? null,
+      scanFrequency: scanFrequency ?? 'daily',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
 
-    return NextResponse.json(settings)
+    return NextResponse.json(mockSettings)
   } catch (error) {
     console.error('Error updating settings:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

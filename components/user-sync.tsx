@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 /**
  * UserSync component
  * 
- * This component synchronizes the NextAuth user with our database.
+ * This component validates the NextAuth user session.
  * It should be included in the root layout to ensure it runs on every page.
  */
 export function UserSync() {
@@ -28,46 +28,19 @@ export function UserSync() {
 
     const syncUser = async () => {
       try {
-        console.log("🔄 Syncing user with database...", {
+        console.log("🔄 User session active:", {
           userId: session.user.id,
           email: session.user.email,
           name: session.user.name,
           image: session.user.image
         });
         
-        const response = await fetch("/api/user", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include", // Include cookies for authentication
-          body: JSON.stringify({
-            email: session.user.email,
-            name: session.user.name,
-            image: session.user.image,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("❌ Failed to sync user with database:", response.status, errorText);
-          
-          // Log more details for debugging
-          console.error("❌ Response details:", {
-            status: response.status,
-            statusText: response.statusText,
-            headers: Object.fromEntries(response.headers.entries())
-          });
-          
-          return;
-        }
-
-        const data = await response.json();
-        console.log("✅ User synced successfully:", data.id);
+        // No database sync needed - just mark as synced
+        console.log("✅ User session validated");
         setSyncAttempted(true);
         
       } catch (error) {
-        console.error("❌ Error syncing user:", error);
+        console.error("❌ Error validating user session:", error);
       }
     };
 

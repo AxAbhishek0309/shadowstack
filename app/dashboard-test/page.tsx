@@ -2,10 +2,12 @@
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { UserButton } from "@clerk/nextjs"
+import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 
 export default function DashboardTest() {
+  const { data: session } = useSession()
+  
   return (
     <div className="min-h-screen bg-black text-white p-8">
       <div className="max-w-4xl mx-auto">
@@ -13,7 +15,13 @@ export default function DashboardTest() {
           <h1 className="text-3xl font-bold text-orange-400">
             🎉 Dashboard Test - Working!
           </h1>
-          <UserButton />
+          <Button
+            onClick={() => signOut()}
+            variant="outline"
+            className="border-orange-500/50 text-orange-400"
+          >
+            Sign Out
+          </Button>
         </div>
         
         <Card className="glass-card corner-glow card-realistic p-6">

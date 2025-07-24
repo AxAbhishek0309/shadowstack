@@ -6,30 +6,25 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Github, Play, Code2, GitBranch, ArrowRight, Sparkles, Shield, Target } from "lucide-react"
 import Link from "next/link"
-import { SignInButton, SignUpButton, useUser, UserButton } from "@clerk/nextjs"
+import { useSession, signIn, signOut } from "next-auth/react"
 
 export default function LandingPage() {
-  const { isSignedIn, user } = useUser()
-  
-  // Check if user signed in via GitHub
-  const isGitHubUser = user?.externalAccounts?.some(account => account.provider === 'github')
-  const githubAccount = user?.externalAccounts?.find(account => account.provider === 'github')
+  const { data: session, status } = useSession()
+  const isSignedIn = status === "authenticated"
+  const user = session?.user
   
   // Debug: Log user data to see what's available
   useEffect(() => {
     if (user) {
       console.log('🔍 User data:', {
         id: user.id,
-        email: user.primaryEmailAddress?.emailAddress,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        email: user.email,
+        name: user.name,
+        image: user.image,
         isSignedIn
       })
-      console.log('🔍 External accounts:', user.externalAccounts)
-      console.log('🔍 Is GitHub user:', isGitHubUser)
-      console.log('🔍 GitHub account:', githubAccount)
     }
-  }, [user, isGitHubUser, githubAccount, isSignedIn])
+  }, [user, isSignedIn])
   const [isHovered, setIsHovered] = useState(false)
   const [heatmapData, setHeatmapData] = useState<Array<{
     type: 'hot' | 'warm' | 'cold'
@@ -103,27 +98,27 @@ export default function LandingPage() {
                   Dashboard
                 </Button>
               </Link>
-              <UserButton 
-                appearance={{
-                  elements: {
-                    avatarBox: "w-8 h-8"
-                  }
-                }}
-              />
+              <Button
+                onClick={() => signOut()}
+                variant="outline"
+                className="border-orange-500/50 text-orange-400 hover:bg-orange-500/10 bg-transparent glass-card"
+              >
+                Sign Out
+              </Button>
             </>
           ) : (
             <>
-              <SignInButton mode="modal">
+              <Link href="/sign-in">
                 <Button
                   variant="outline"
                   className="border-orange-500/50 text-orange-400 hover:bg-orange-500/10 bg-transparent glass-card"
                 >
                   Sign In
                 </Button>
-              </SignInButton>
-              <SignUpButton mode="modal">
+              </Link>
+              <Link href="/sign-up">
                 <Button className="btn-premium text-white">Get Started</Button>
-              </SignUpButton>
+              </Link>
             </>
           )}
         </div>
@@ -185,7 +180,7 @@ export default function LandingPage() {
               </>
             ) : (
               <>
-                <SignUpButton mode="modal">
+                <Link href="/sign-up">
                   <Button
                     size="lg"
                     className="btn-premium text-white px-8 py-4 text-lg font-semibold corner-glow transition-all duration-300"
@@ -198,7 +193,7 @@ export default function LandingPage() {
                       className={`w-5 h-5 ml-2 transition-transform duration-300 ${isHovered ? "translate-x-1" : ""}`}
                     />
                   </Button>
-                </SignUpButton>
+                </Link>
 
                 <Link href="/connect/github">
                   <Button

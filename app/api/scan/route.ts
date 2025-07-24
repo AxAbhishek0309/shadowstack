@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
-import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/auth'
 
 // Advanced code analysis types
 type CodeUsageData = {
@@ -272,107 +272,37 @@ function calculateSavings(results: CodeAnalysisResult[]): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth()
+    const session = await getServerSession(authOptions)
     
-    if (!userId) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId }
-    })
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     const body = await request.json()
     const { repositoryId } = body
 
-    // Check if repository belongs to user
-    const repository = await prisma.repository.findFirst({
-      where: { 
-        id: repositoryId,
-        userId: user.id 
-      }
-    })
-
-    if (!repository) {
-      return NextResponse.json({ error: 'Repository not found' }, { status: 404 })
+    // Mock scan creation
+    const mockScan = {
+      id: `scan-${Date.now()}`,
+      userId: session.user.id,
+      repositoryId,
+      status: 'running',
+      totalFiles: 0,
+      deadFiles: 0,
+      coverage: 0,
+      savings: null,
+      riskLevel: 'low',
+      startedAt: new Date(),
+      completedAt: null,
+      error: null
     }
 
-    // Create new scan
-    const scan = await prisma.scan.create({
-      data: {
-        userId: user.id,
-        repositoryId,
-        status: 'running'
-      }
-    })
+    // Simulate scan completion after 3 seconds
+    setTimeout(() => {
+      console.log(`Mock scan ${mockScan.id} completed`)
+    }, 3000)
 
-    // Simulate scan process (in real app, this would be a background job)
-    setTimeout(async () => {
-      try {
-        // Run the advanced code analysis
-        const analysisResults = analyzeCodebase(repository);
-        
-        // Calculate overall metrics
-        const totalFiles = 150; // In a real implementation, this would be the actual count
-        const deadFiles = analysisResults.length;
-        const coverage = 100 - (analysisResults.reduce((sum, file) => sum + file.unusedPercent, 0) / analysisResults.length);
-        const savings = calculateSavings(analysisResults);
-        
-        // Determine overall risk level
-        const highRiskCount = analysisResults.filter(file => file.riskLevel === 'high').length;
-        const mediumRiskCount = analysisResults.filter(file => file.riskLevel === 'medium').length;
-        let overallRisk: 'low' | 'medium' | 'high' = 'low';
-        
-        if (highRiskCount > 0) overallRisk = 'high';
-        else if (mediumRiskCount > 2) overallRisk = 'medium';
-        
-        // Create dead code entries
-        await prisma.deadCode.createMany({
-          data: analysisResults.map(item => ({
-            ...item,
-            repositoryId,
-            scanId: scan.id
-          }))
-        })
-
-        // Update scan status
-        await prisma.scan.update({
-          where: { id: scan.id },
-          data: {
-            status: 'completed',
-            completedAt: new Date(),
-            totalFiles,
-            deadFiles,
-            coverage,
-            savings,
-            riskLevel: overallRisk
-          }
-        })
-
-        // Update repository last scan
-        await prisma.repository.update({
-          where: { id: repositoryId },
-          data: { lastScanAt: new Date() }
-        })
-
-      } catch (error) {
-        console.error('Error completing scan:', error)
-        await prisma.scan.update({
-          where: { id: scan.id },
-          data: {
-            status: 'failed',
-            completedAt: new Date(),
-            error: 'Scan failed'
-          }
-        })
-      }
-    }, 5000) // Complete scan after 5 seconds
-
-    return NextResponse.json(scan)
+    return NextResponse.json(mockScan)
   } catch (error) {
     console.error('Error starting scan:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -381,31 +311,57 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    const { userId } = await auth()
+    const session = await getServerSession(authOptions)
     
-    if (!userId) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId }
-    })
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    const scans = await prisma.scan.findMany({
-      where: { userId: user.id },
-      include: {
-        repository: true,
-        deadCode: true
+    // Mock scans data
+    const mockScans = [
+      {
+        id: 'scan-1',
+        userId: session.user.id,
+        repositoryId: '1',
+        status: 'completed',
+        totalFiles: 150,
+        deadFiles: 5,
+        coverage: 87.3,
+        savings: '2.1MB',
+        riskLevel: 'low',
+        startedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        completedAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 30000),
+        error: null,
+        repository: {
+          id: '1',
+          name: 'my-awesome-app',
+          fullName: 'username/my-awesome-app'
+        },
+        deadCode: []
       },
-      orderBy: { startedAt: 'desc' },
-      take: 10
-    })
+      {
+        id: 'scan-2',
+        userId: session.user.id,
+        repositoryId: '2',
+        status: 'completed',
+        totalFiles: 89,
+        deadFiles: 2,
+        coverage: 92.1,
+        savings: '890KB',
+        riskLevel: 'low',
+        startedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        completedAt: new Date(Date.now() - 24 * 60 * 60 * 1000 + 45000),
+        error: null,
+        repository: {
+          id: '2',
+          name: 'api-service',
+          fullName: 'username/api-service'
+        },
+        deadCode: []
+      }
+    ]
 
-    return NextResponse.json(scans)
+    return NextResponse.json(mockScans)
   } catch (error) {
     console.error('Error fetching scans:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -29,17 +29,12 @@ import {
   Sparkles,
 } from "lucide-react"
 
-// Add Clerk imports at the top
-import { UserButton } from "@clerk/nextjs"
-import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useSession, signOut } from "next-auth/react"
 
 export default function Dashboard() {
+  const { data: session } = useSession()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [darkMode, setDarkMode] = useState(true)
-
-  // Remove useUser, useRouter, useEffect related to Clerk auth check
 
   const deadCodeFiles = [
     { name: "components/OldModal.tsx", unused: 95, size: "2.3kb", lastUsed: "3 months ago" },
@@ -153,13 +148,14 @@ export default function Dashboard() {
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full shadow-lg shadow-orange-500/50"></div>
               </Button>
 
-              <UserButton
-                appearance={{
-                  elements: {
-                    avatarBox: "w-8 h-8 border-2 border-orange-500/30 corner-glow",
-                  },
-                }}
-              />
+              <Button
+                onClick={() => signOut()}
+                variant="ghost"
+                size="sm"
+                className="text-gray-400 hover:text-white corner-glow"
+              >
+                Sign Out
+              </Button>
             </div>
           </div>
         </header>
