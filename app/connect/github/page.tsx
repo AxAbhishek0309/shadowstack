@@ -103,12 +103,12 @@ export default function GitHubConnect() {
           </div>
 
           <UserButton
-            afterSignOutUrl="/"
             appearance={{
               elements: {
                 avatarBox: "w-8 h-8 border-2 border-orange-500/30 corner-glow",
               },
             }}
+          />}}
           />
         </div>
       </header>

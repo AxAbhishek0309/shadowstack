@@ -1,15 +1,66 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Github, Play, Code2, GitBranch, ArrowRight, Sparkles, Shield, Target } from "lucide-react"
 import Link from "next/link"
-import { SignInButton, SignUpButton } from "@clerk/nextjs"
+import { SignInButton, SignUpButton, useUser, UserButton } from "@clerk/nextjs"
 
 export default function LandingPage() {
+  const { isSignedIn, user } = useUser()
+  
+  // Check if user signed in via GitHub
+  const isGitHubUser = user?.externalAccounts?.some(account => account.provider === 'github')
+  const githubAccount = user?.externalAccounts?.find(account => account.provider === 'github')
+  
+  // Debug: Log user data to see what's available
+  useEffect(() => {
+    if (user) {
+      console.log('🔍 User data:', {
+        id: user.id,
+        email: user.primaryEmailAddress?.emailAddress,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        isSignedIn
+      })
+      console.log('🔍 External accounts:', user.externalAccounts)
+      console.log('🔍 Is GitHub user:', isGitHubUser)
+      console.log('🔍 GitHub account:', githubAccount)
+    }
+  }, [user, isGitHubUser, githubAccount, isSignedIn])
   const [isHovered, setIsHovered] = useState(false)
+  const [heatmapData, setHeatmapData] = useState<Array<{
+    type: 'hot' | 'warm' | 'cold'
+    transform: string
+    boxShadow: string
+  }>>([])
+
+  useEffect(() => {
+    // Generate heatmap data only on client side to avoid hydration mismatch
+    const data = Array.from({ length: 64 }).map(() => {
+      const rand1 = Math.random()
+      const rand2 = Math.random()
+      const rand3 = Math.random()
+      
+      let type: 'hot' | 'warm' | 'cold'
+      if (rand1 > 0.7) {
+        type = 'hot'
+      } else if (rand1 > 0.4) {
+        type = 'warm'
+      } else {
+        type = 'cold'
+      }
+
+      return {
+        type,
+        transform: rand2 > 0.8 ? "translateY(-4px)" : "none",
+        boxShadow: rand3 > 0.7 ? "0 0 15px rgba(255, 107, 0, 0.4)" : "none",
+      }
+    })
+    setHeatmapData(data)
+  }, [])
 
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden relative">
@@ -42,17 +93,39 @@ export default function LandingPage() {
           <a href="#docs" className="text-gray-300 hover:text-orange-400 transition-colors">
             Docs
           </a>
-          <SignInButton mode="modal">
-            <Button
-              variant="outline"
-              className="border-orange-500/50 text-orange-400 hover:bg-orange-500/10 bg-transparent glass-card"
-            >
-              Sign In
-            </Button>
-          </SignInButton>
-          <SignUpButton mode="modal">
-            <Button className="btn-premium text-white">Get Started</Button>
-          </SignUpButton>
+          {isSignedIn ? (
+            <>
+              <Link href="/dashboard">
+                <Button
+                  variant="outline"
+                  className="border-orange-500/50 text-orange-400 hover:bg-orange-500/10 bg-transparent glass-card"
+                >
+                  Dashboard
+                </Button>
+              </Link>
+              <UserButton 
+                appearance={{
+                  elements: {
+                    avatarBox: "w-8 h-8"
+                  }
+                }}
+              />
+            </>
+          ) : (
+            <>
+              <SignInButton mode="modal">
+                <Button
+                  variant="outline"
+                  className="border-orange-500/50 text-orange-400 hover:bg-orange-500/10 bg-transparent glass-card"
+                >
+                  Sign In
+                </Button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <Button className="btn-premium text-white">Get Started</Button>
+              </SignUpButton>
+            </>
+          )}
         </div>
       </nav>
 
@@ -82,31 +155,63 @@ export default function LandingPage() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-            <SignUpButton mode="modal">
-              <Button
-                size="lg"
-                className="btn-premium text-white px-8 py-4 text-lg font-semibold corner-glow transition-all duration-300"
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
-              >
-                <Play className="w-5 h-5 mr-2" />
-                Get Started Free
-                <ArrowRight
-                  className={`w-5 h-5 ml-2 transition-transform duration-300 ${isHovered ? "translate-x-1" : ""}`}
-                />
-              </Button>
-            </SignUpButton>
+            {isSignedIn ? (
+              <>
+                <Link href="/dashboard">
+                  <Button
+                    size="lg"
+                    className="btn-premium text-white px-8 py-4 text-lg font-semibold corner-glow transition-all duration-300"
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
+                  >
+                    <Play className="w-5 h-5 mr-2" />
+                    Go to Dashboard
+                    <ArrowRight
+                      className={`w-5 h-5 ml-2 transition-transform duration-300 ${isHovered ? "translate-x-1" : ""}`}
+                    />
+                  </Button>
+                </Link>
 
-            <Link href="/connect/github">
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-orange-500/50 text-orange-400 hover:bg-orange-500/10 px-8 py-4 text-lg glass-card corner-glow bg-transparent"
-              >
-                <Github className="w-5 h-5 mr-2" />
-                Try with GitHub
-              </Button>
-            </Link>
+                <Link href="/connect/github">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-orange-500/50 text-orange-400 hover:bg-orange-500/10 px-8 py-4 text-lg glass-card corner-glow bg-transparent"
+                  >
+                    <Github className="w-5 h-5 mr-2" />
+                    Connect GitHub
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <SignUpButton mode="modal">
+                  <Button
+                    size="lg"
+                    className="btn-premium text-white px-8 py-4 text-lg font-semibold corner-glow transition-all duration-300"
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
+                  >
+                    <Play className="w-5 h-5 mr-2" />
+                    Get Started Free
+                    <ArrowRight
+                      className={`w-5 h-5 ml-2 transition-transform duration-300 ${isHovered ? "translate-x-1" : ""}`}
+                    />
+                  </Button>
+                </SignUpButton>
+
+                <Link href="/connect/github">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-orange-500/50 text-orange-400 hover:bg-orange-500/10 px-8 py-4 text-lg glass-card corner-glow bg-transparent"
+                  >
+                    <Github className="w-5 h-5 mr-2" />
+                    Try with GitHub
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* 3D Heatmap Visual */}
@@ -114,20 +219,20 @@ export default function LandingPage() {
             <Card className="glass-card corner-glow card-realistic overflow-hidden">
               <div className="p-8">
                 <div className="grid grid-cols-8 gap-2 mb-4">
-                  {Array.from({ length: 64 }).map((_, i) => (
+                  {heatmapData.map((cell, i) => (
                     <div
                       key={i}
                       className={`h-8 rounded transition-all duration-1000 corner-glow ${
-                        Math.random() > 0.7
+                        cell.type === 'hot'
                           ? "bg-gradient-to-t from-orange-600 to-orange-400 shadow-lg shadow-orange-500/50 animate-pulse"
-                          : Math.random() > 0.4
+                          : cell.type === 'warm'
                             ? "bg-gradient-to-t from-orange-800 to-orange-600 shadow-md shadow-orange-600/30"
                             : "bg-gray-800 border border-gray-700"
                       }`}
                       style={{
                         animationDelay: `${i * 50}ms`,
-                        transform: Math.random() > 0.8 ? "translateY(-4px)" : "none",
-                        boxShadow: Math.random() > 0.7 ? "0 0 15px rgba(255, 107, 0, 0.4)" : "none",
+                        transform: cell.transform,
+                        boxShadow: cell.boxShadow,
                       }}
                     />
                   ))}

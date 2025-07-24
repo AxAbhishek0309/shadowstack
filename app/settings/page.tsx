@@ -281,11 +281,22 @@ export default function SettingsPage() {
                   <Zap className="w-8 h-8 text-orange-400" />
                   <div>
                     <p className="font-medium text-white">Pro Plan</p>
-                    <p className="text-sm text-gray-400">$29/month • Unlimited repositories</p>
+                    <p className="text-sm text-gray-400">$29/month <span className="bullet"></span> Unlimited repositories</p>
                   </div>
                 </div>
                 <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">Active</Badge>
               </div>
+              <style jsx>{`
+                .bullet {
+                  display: inline-block;
+                  width: 0.5em;
+                  height: 0.5em;
+                  background: currentColor;
+                  border-radius: 50%;
+                  vertical-align: middle;
+                  margin: 0 0.4em;
+                }
+              `}</style>
 
               <div className="grid md:grid-cols-2 gap-6">
                 <div>

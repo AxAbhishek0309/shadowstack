@@ -31,10 +31,15 @@ import {
 
 // Add Clerk imports at the top
 import { UserButton } from "@clerk/nextjs"
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [darkMode, setDarkMode] = useState(true)
+
+  // Remove useUser, useRouter, useEffect related to Clerk auth check
 
   const deadCodeFiles = [
     { name: "components/OldModal.tsx", unused: 95, size: "2.3kb", lastUsed: "3 months ago" },
@@ -48,6 +53,8 @@ export default function Dashboard() {
     { file: "utils/formatters.js", action: "Delete unused functions", impact: "Safe" },
     { file: "types/legacy.ts", action: "Remove deprecated types", impact: "Medium risk" },
   ]
+
+
 
   return (
     <div className="min-h-screen bg-black text-white flex">
@@ -147,7 +154,6 @@ export default function Dashboard() {
               </Button>
 
               <UserButton
-                afterSignOutUrl="/"
                 appearance={{
                   elements: {
                     avatarBox: "w-8 h-8 border-2 border-orange-500/30 corner-glow",

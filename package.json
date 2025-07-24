@@ -9,7 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "@clerk/nextjs": "latest",
+    "next-auth": "^4.24.10",
     "@hookform/resolvers": "^3.9.1",
     "@prisma/client": "^6.12.0",
     "@radix-ui/react-accordion": "1.2.2",
